@@ -7,6 +7,12 @@ from __future__ import division, print_function, absolute_import
 
 from .tmm_core import (coh_tmm, unpolarized_RT, ellips,
                        position_resolved, find_in_structure_with_inf)
+"""
+Single dot import means the file is in the same directory as you are. 
+2 dots means the file is in the parent directory and 3 dots the grand parent directory, etc..
+These are "relative imports" meaning you are importing relative to your file location. 
+"""
+
 
 from numpy import pi, linspace, inf, array
 from scipy.interpolate import interp1d
