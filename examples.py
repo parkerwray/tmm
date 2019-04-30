@@ -5,7 +5,7 @@ Examples of plots and calculations using the tmm package.
 
 from __future__ import division, print_function, absolute_import
 
-from .tmm_core import (coh_tmm, unpolarized_RT, ellips,
+from tmm.tmm_core import (coh_tmm, unpolarized_RT, ellips,
                        position_resolved, find_in_structure_with_inf)
 """
 Single dot import means the file is in the same directory as you are. 

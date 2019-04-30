@@ -2,11 +2,12 @@
 
 from __future__ import division, print_function, absolute_import
 
-from .tmm_core import (coh_tmm, unpolarized_RT, ellips,
+from tmm.tmm_core import (coh_tmm, unpolarized_RT, ellips,
                        position_resolved, find_in_structure_with_inf)
 
 
-import tmm_core as tmm
+import tmm.tmm_core as tmm
+
 import numpy
 from numpy import pi, linspace, inf, array
 import pandas
@@ -26,7 +27,7 @@ except ImportError:
 from matplotlib.pyplot import show
 from argparse import ArgumentParser
 import lowtran
-from lowtran.plots import plottrans
+from lowtran.lowtran.plots import plottrans
 
 import xarray
 
