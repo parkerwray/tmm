@@ -29,7 +29,7 @@ Define wavelength range of interest and layer thicknesses
 """
 
 nm = 1e-9
-lda = linspace(3300,27000,5000) # list of wavelengths in nm
+lda = linspace(5000,28000,5000) # list of wavelengths in nm
 
 
 
@@ -97,24 +97,43 @@ Notes:
     4) materials are iterpolated in datalib based on input lda values
 """
 
-m = datalib.Material_RI(lda*nm, 'RC0_1B_Si') #convert lda to SI unit
+m = datalib.Material_RI(lda*nm, 'RC0_1D_Si') #convert lda to SI unit
 msi_fn = interp1d(lda, m, kind='linear') # make mat data a FUNCTION of lda, in nm
 
 m = datalib.Material_RI(lda*nm, 'SiO2') #convert lda to SI unit
 msio2_fn = interp1d(lda, m, kind='linear') # make mat data a FUNCTION of lda, in nm
 
-m = datalib.alloy(lda*nm, 0.15, 'Air','a-Al2O3','Bruggeman')
+
+
+m1 = datalib.Material_RI(lda*nm, 'RC0_1D_Al2O3') #convert lda to SI unit
+m2 = datalib.Material_RI(lda*nm, 'Al2O3')
+
+plt.figure()
+plt.plot(lda/1000, real(m1),'k', label = 'n model')
+plt.plot(lda/1000, real(m2),'k:', label = 'n VASE stock')
+plt.plot(lda/1000, imag(m1),'r', label = 'k model')
+plt.plot(lda/1000, imag(m2),'r:', label = 'k VASE stock')
+plt.xlabel('Wavelength (um)')
+plt.ylabel('')
+#plt.title('Refractive index of Al2O3')
+plt.legend()
+plt.show() 
+
+#m = datalib.alloy(lda*nm, 0.36, 'Air','RC0_1D_Al2O3','Bruggeman')
+#mal2o3np_ideal_fn = interp1d(lda, m, kind='linear') # make mat data a FUNCTION of lda, in nm
+#
+#m = datalib.alloy(lda*nm, 0.12, 'Air','RC0_1D_Al2O3','Bruggeman')
+#mal2o3rough_ideal_fn = interp1d(lda, m, kind='linear') # make mat data a FUNCTION of lda, in nm
+
+m = datalib.alloy(lda*nm, 0.36, 'Air','RC0_1D_Al2O3','Bruggeman')
 mal2o3np_ideal_fn = interp1d(lda, m, kind='linear') # make mat data a FUNCTION of lda, in nm
-#plt.figure,
-#plt.plot(lda, real(m), label = 'n' )
-#plt.plot(lda, imag(m), label = 'k')
-#plt.legend()
-#plt.show()
-m = datalib.alloy(lda*nm, 0.0874, 'Air','a-Al2O3','Bruggeman')
+
+m = datalib.alloy(lda*nm, 0.11, 'Air','RC0_1D_Al2O3','Bruggeman')
 mal2o3rough_ideal_fn = interp1d(lda, m, kind='linear') # make mat data a FUNCTION of lda, in nm
 
-d_list = [inf, 359.944, 35089.86, 15.62, 525000, inf] # list of layer thicknesses in nm
-c_list = ['i','i','i','c','i','i']
+
+d_list = [inf, 376.30, 2300.39, 4.86, 525000, inf] # list of layer thicknesses in nm
+c_list = ['i','c','c','c','i','i']
 theta = 0
 T_list = [];
 R_list = [];
@@ -152,7 +171,7 @@ Notes:
     4) materials are iterpolated in datalib based on input lda values
 """
 
-m = datalib.Material_RI(lda*nm, 'RC0_1B_Si') #convert lda to SI unit
+m = datalib.Material_RI(lda*nm, 'RC0_1D_Si') #convert lda to SI unit
 msi_fn = interp1d(lda, m, kind='linear') # make mat data a FUNCTION of lda, in nm
 
 m = datalib.Material_RI(lda*nm, 'SiO2') #convert lda to SI unit
@@ -161,7 +180,7 @@ msio2_fn = interp1d(lda, m, kind='linear') # make mat data a FUNCTION of lda, in
 Tref_list = [];
 Rref_list = [];
 Aref_list = [];
-dref_list = [inf, 15.62, 525000, inf] # list of layer thicknesses in nm %Ellip shows 15.62 SiO2 native oxide layer
+dref_list = [inf, 4.86, 525000, inf] # list of layer thicknesses in nm %Ellip shows 15.62 SiO2 native oxide layer
 cref_list = ['i', 'c', 'i', 'i']
 theta = 0
 for lda0 in lda:
@@ -222,24 +241,24 @@ Plot TMM result with measured result
 """
 Plot R and T TMM and measured result
 """    
-plt.figure()
-plt.plot(lda, Tideal*100,'b:', label = 'Bruggeman structure transmission')
-plt.plot(lda, np_T*calT*100,'b', label = 'Measured structure transmission')
-plt.plot(lda, Rideal*100,'k:', label = 'Bruggeman structure reflection')
-plt.plot(lda, np_R*calR*100,'k', label = 'Measured structure reflection')
-
-#plt.plot(lda, (1-Tideal-Rideal)*100,'r', label = 'Bruggeman structure absorption')
-#plt.plot(lda, (si_vis_TR-np_vis_TR)*cal*100,'r', label = 'Measured SiO2 NP absorption')
-#plt.plot(lda, (A[:,1]+A[:,2]+A[:,3])*100,'r:', label = 'Fitted Bruggeman SiO2 NP absorption')
-#plt.plot(lda, (Aideal[:,1]+Aideal[:,2]+Aideal[:,3])*100,'r--', label = 'Ideal Bruggeman SiO2 NP absorption')
-#plt.plot(lda, 1-np_vis_TR*cal, label = 'Measured film Absorption')
-
-#plt.plot(lda, si_vis_TR*cal, label = 'Measured si reflection')
-plt.xlabel('Wavelength (nm)')
-plt.ylabel('%')
-plt.title('Transmission, reflection, and absorption at normal incidence')
-plt.legend()
-plt.show() 
+#plt.figure()
+#plt.plot(lda, Tideal*100,'b:', label = 'Bruggeman structure transmission')
+#plt.plot(lda, np_T*calT*100,'b', label = 'Measured structure transmission')
+#plt.plot(lda, Rideal*100,'k:', label = 'Bruggeman structure reflection')
+#plt.plot(lda, np_R*calR*100,'k', label = 'Measured structure reflection')
+#
+##plt.plot(lda, (1-Tideal-Rideal)*100,'r', label = 'Bruggeman structure absorption')
+##plt.plot(lda, (si_vis_TR-np_vis_TR)*cal*100,'r', label = 'Measured SiO2 NP absorption')
+##plt.plot(lda, (A[:,1]+A[:,2]+A[:,3])*100,'r:', label = 'Fitted Bruggeman SiO2 NP absorption')
+##plt.plot(lda, (Aideal[:,1]+Aideal[:,2]+Aideal[:,3])*100,'r--', label = 'Ideal Bruggeman SiO2 NP absorption')
+##plt.plot(lda, 1-np_vis_TR*cal, label = 'Measured film Absorption')
+#
+##plt.plot(lda, si_vis_TR*cal, label = 'Measured si reflection')
+#plt.xlabel('Wavelength (nm)')
+#plt.ylabel('%')
+#plt.title('Transmission, reflection, and absorption at normal incidence')
+#plt.legend()
+#plt.show() 
 
 ##############################################################################
 ##############################################################################
@@ -250,16 +269,16 @@ Plot TMM and measured absorption
 t_atmosphere = datalib.ATData(lda*1e-9)
 
 fig = plt.figure()
-plt.plot(lda*1e-3, t_atmosphere*100,'k', alpha = 0.1, label='Atmospheric \n transmittance')
-plt.plot(lda*1e-3, (1-np_R*calR-np_T*calT)*100,'k', label = 'Total absorption \n (measured)')
-plt.plot(lda*1e-3, (1-Tideal-Rideal)*100, 'k:', label = 'Total absorption \n (simulated)')
-plt.plot(lda*1e-3, Aideal[:,1]*100,'b:', label = 'Roughness layer \n (9% $SiO_{2}$ Brugg.)')
-plt.plot(lda*1e-3, Aideal[:,2]*100,'r:', label = 'Nanoparticle layer \n (15% $SiO_2$ Brugg.)')
+plt.plot(lda*1e-3, t_atmosphere*100,'k', alpha = 0.1, label='AM1.5 or \n Atmospheric \n transmittance')
+plt.plot(lda*1e-3, (1-np_R*calR-np_T*calT)*100,'r', label = 'Total absorption \n (measured)')
+plt.plot(lda*1e-3, (1-Tideal-Rideal)*100, 'r--', label = 'Total absorption \n (simulated)')
+plt.plot(lda*1e-3, Aideal[:,1]*100,'b:', label = 'Roughness layer \n (12% $Al_{2}O_{3}$ Brugg.)')
+plt.plot(lda*1e-3, Aideal[:,2]*100,'k:', label = 'Nanoparticle layer \n (36% $Al_{2}O_{3}$ Brugg.)')
 plt.plot(lda*1e-3, Aideal[:,4]*100,'m:', label = 'Si Substrate')
 #plt.plot(lda, Aideal[:,3]*100,'y:', label = 'SiO2 native oxide absorption')
 
 plt.xlabel('Wavelength (um)')
-plt.ylabel('Absorption/Emission (%)')
+plt.ylabel('Absorption (%)')
 #plt.title('Absorption at normal incidence')
 #ax.legend().draggable()
 

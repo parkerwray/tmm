@@ -14,13 +14,13 @@ import matplotlib as mplib
 from scipy.interpolate import interp1d, InterpolatedUnivariateSpline
 
 
-mplib.rcParams['lines.linewidth'] = 4
-mplib.rcParams['lines.markersize'] = 6
-mplib.rcParams['axes.titlesize'] = 30
-mplib.rcParams['axes.labelsize'] = 24
-mplib.rcParams['xtick.labelsize'] = 20
-mplib.rcParams['ytick.labelsize'] = 20
-mplib.rcParams['font.size'] = 20
+#mplib.rcParams['lines.linewidth'] = 8
+#mplib.rcParams['lines.markersize'] = 6
+#mplib.rcParams['axes.titlesize'] = 30
+#mplib.rcParams['axes.labelsize'] = 24
+#mplib.rcParams['xtick.labelsize'] = 20
+#mplib.rcParams['ytick.labelsize'] = 20
+#mplib.rcParams['font.size'] = 20
 
 
 
@@ -29,7 +29,7 @@ Define wavelength range of interest and layer thicknesses
 """
 
 nm = 1e-9
-lda = linspace(250,1000,500) # list of wavelengths in nm
+lda = linspace(250,900,1000) # list of wavelengths in nm
 
 
 
@@ -48,7 +48,7 @@ If the data is VIS: load Total, Specular, and Diffuse Reflection
 [si_vis, si_ir] = datalib.Read_spectra_from_File('RC0_1B_Si')
  
 order = 1
-if (min(lda) > 1000):
+if (min(lda) > 2000):
     a = InterpolatedUnivariateSpline(np_ir[:,0]*1e9, np_ir[:,1], k=order)
     np_R = a(lda)
     
@@ -70,6 +70,15 @@ else:
     a = InterpolatedUnivariateSpline(np_vis[:,0]*1e9, np_vis[:,3], k=order)
     np_RD = a(lda)
     
+    a = InterpolatedUnivariateSpline(np_vis[:,0]*1e9, np_vis[:,4], k=order)
+    np_T = a(lda)
+    
+    a = InterpolatedUnivariateSpline(np_vis[:,0]*1e9, np_vis[:,5], k=order)
+    np_TF = a(lda)
+    
+    a = InterpolatedUnivariateSpline(np_vis[:,0]*1e9, np_vis[:,6], k=order)
+    np_TD = a(lda)    
+    
     a = InterpolatedUnivariateSpline(si_vis[:,0]*1e9, si_vis[:,1], k=order)
     si_R = a(lda)
     
@@ -79,6 +88,14 @@ else:
     a = InterpolatedUnivariateSpline(si_vis[:,0]*1e9, si_vis[:,3], k=order)
     si_RD = a(lda)
     
+    a = InterpolatedUnivariateSpline(si_vis[:,0]*1e9, si_vis[:,4], k=order)
+    si_T = a(lda)
+    
+    a = InterpolatedUnivariateSpline(si_vis[:,0]*1e9, si_vis[:,5], k=order)
+    si_TF = a(lda)
+    
+    a = InterpolatedUnivariateSpline(si_vis[:,0]*1e9, si_vis[:,6], k=order)
+    si_TD = a(lda)   
     
     
     
@@ -127,14 +144,14 @@ msi_fn = interp1d(lda, m, kind='linear') # make mat data a FUNCTION of lda, in n
 m = datalib.Material_RI(lda*nm, 'SiO2') #convert lda to SI unit
 msio2_fn = interp1d(lda, m, kind='linear') # make mat data a FUNCTION of lda, in nm
 
-m = datalib.alloy(lda*nm, 0.15, 'Air','SiO2','Bruggeman')
+m = datalib.alloy(lda*nm, 0.238, 'Air','SiO2','Bruggeman')
 msio2np_ideal_fn = interp1d(lda, m, kind='linear') # make mat data a FUNCTION of lda, in nm
 
-m = datalib.alloy(lda*nm, 0.0874, 'Air','SiO2','Bruggeman')
+m = datalib.alloy(lda*nm, 0.0674, 'Air','SiO2','Bruggeman')
 msio2rough_ideal_fn = interp1d(lda, m, kind='linear') # make mat data a FUNCTION of lda, in nm
 
-d_list = [inf, 359.944, 35089.86, 15.62, 525000, inf] # list of layer thicknesses in nm
-c_list = ['i','i','i','c','i','i']
+d_list = [inf, 837.372, 2621.210, 12.848, 525000, inf] # list of layer thicknesses in nm
+c_list = ['i','i','i','i','i','i']
 theta = 0
 T_list = [];
 R_list = [];
@@ -181,8 +198,8 @@ msio2_fn = interp1d(lda, m, kind='linear') # make mat data a FUNCTION of lda, in
 Tref_list = [];
 Rref_list = [];
 Aref_list = [];
-dref_list = [inf, 15.62, 525000, inf] # list of layer thicknesses in nm %Ellip shows 15.62 SiO2 native oxide layer
-cref_list = ['i', 'c', 'i', 'i']
+dref_list = [inf, 12.848, 525000, inf] # list of layer thicknesses in nm %Ellip shows 15.62 SiO2 native oxide layer
+cref_list = ['i', 'i', 'i', 'i']
 theta = 0
 for lda0 in lda:
     nref_list = [1,msio2_fn(lda0), msi_fn(lda0), 1]
@@ -195,6 +212,33 @@ Aref = stack(Aref_list, axis = 0) # convert list of np.arrays to single np.array
 Tref = array(Tref_list, dtype = complex) # Convert list to array for math operations
 Rref = array(Rref_list, dtype = complex) # Convert list to array for math operations 
 
+
+
+##############################################################################
+##############################################################################
+#%%
+"""
+Plot R and T TMM and measured result
+"""    
+#plt.figure()
+#plt.plot(lda, Tref*100,'b:', label = 'Simulated Si transmission')
+#plt.plot(lda, si_T*100,'b', label = 'Measured Si transmission')
+#
+#plt.plot(lda, Rref*100,'k:', label = 'Simulated Si reflection')
+#plt.plot(lda, si_R*100,'k', label = 'Measured Si reflection')
+#
+#plt.plot(lda, (1-Tref-Rref)*100,'r:', label = 'Simulated Si absorption')
+#plt.plot(lda, (1-si_T-si_R)*100,'r', label = 'Measured Si absorption')
+#
+#
+#plt.xlabel('Wavelength (nm)')
+#plt.ylabel('%')
+#plt.title('Transmission, reflection, and absorption at normal incidence')
+#plt.legend()
+#plt.show() 
+#
+
+
 ##############################################################################
 ##############################################################################
 #%%
@@ -204,10 +248,15 @@ If data is IR: Calibrate for Si reflection as well.
 """   
 
 calR = Rref/si_R
-if (min(lda) > 1000):   
-    calT = Tref/si_T
+calT =   []        # Tref/si_T
 
-    
+   
+
+#plt.figure()
+#plt.plot(lda,Tref)
+#plt.plot(lda,si_T)
+#plt.plot(lda, calT)
+#    
 
 ##############################################################################
 ##############################################################################
@@ -245,30 +294,23 @@ Plot TMM result with measured result
 """
 Plot R and T TMM and measured result
 """    
+#plt.figure()
 
-if (min(lda) > 1000): 
-    plt.figure()
-    plt.plot(lda, Tideal*100,'b:', label = 'Bruggeman structure transmission')
-    plt.plot(lda, np_T*calT*100,'b', label = 'Measured structure transmission')
-    
-    plt.plot(lda, Rideal*100,'k:', label = 'Bruggeman structure reflection')
-    plt.plot(lda, np_R*calR*100,'k', label = 'Measured structure reflection')
-    plt.xlabel('Wavelength (nm)')
-    plt.ylabel('%')
-    plt.title('Transmission, reflection, and absorption at normal incidence')
-    plt.legend()
-    plt.show() 
-else:
-    plt.figure()
-    plt.plot(lda, Rideal*100,'k:', label = 'Bruggeman structure reflection')
-    plt.plot(lda, np_R*calR*100,'k', label = 'Measured structure reflection')
-    plt.plot(lda, Rref*100,'b', label = 'Si reflection')
-    plt.xlabel('Wavelength (nm)')
-    plt.ylabel('%')
-    plt.title('Transmission, reflection, and absorption at normal incidence')
-    plt.legend()
-    plt.show()     
-    
+#plt.plot(lda, Tideal*100,'b:', label = 'Bruggeman structure transmission')
+#plt.plot(lda, np_T*100,'b', label = 'Measured structure transmission')
+#
+#plt.plot(lda, Rideal*100,'k:', label = 'Bruggeman structure reflection')
+#plt.plot(lda, np_R*calR*100,'k', label = 'Measured structure reflection')
+#
+#plt.plot(lda, (1-Tideal-Rideal)*100,'r:', label = 'Bruggeman structure absorptin')
+#plt.plot(lda, (1-np_T-np_R*calR)*100,'r', label = 'Measured structure absorption')
+#
+#plt.xlabel('Wavelength (nm)')
+#plt.ylabel('%')
+#plt.title('Transmission, reflection, and absorption at normal incidence')
+#plt.legend()
+#plt.show() 
+
     
 ##############################################################################
 ##############################################################################
@@ -278,14 +320,14 @@ Plot TMM and measured absorption
 """  
 
 
-if (min(lda) > 1000):
+if (min(lda) > 2000):
     t_atmosphere = datalib.ATData(lda*1e-9)
     fig = plt.figure()
     plt.plot(lda*1e-3, t_atmosphere*100,'k', alpha = 0.1, label='Atmospheric \n transmittance')
     plt.plot(lda*1e-3, (1-np_R*calR-np_T*calT)*100,'k', label = 'Total absorption \n (measured)')
     plt.plot(lda*1e-3, (1-Tideal-Rideal)*100, 'k:', label = 'Total absorption \n (simulated)')
-    plt.plot(lda*1e-3, Aideal[:,1]*100,'b:', label = 'Roughness layer \n (9% $SiO_{2}$ Brugg.)')
-    plt.plot(lda*1e-3, Aideal[:,2]*100,'r:', label = 'Nanoparticle layer \n (15% $SiO_2$ Brugg.)')
+    plt.plot(lda*1e-3, Aideal[:,1]*100,'b:', label = 'Roughness layer \n (6.8% $SiO_{2}$ Brugg.)')
+    plt.plot(lda*1e-3, Aideal[:,2]*100,'r:', label = 'Nanoparticle layer \n (23.8% $SiO_2$ Brugg.)')
     plt.plot(lda*1e-3, Aideal[:,4]*100,'m:', label = 'Si Substrate')
     #plt.plot(lda, Aideal[:,3]*100,'y:', label = 'SiO2 native oxide absorption')
     
@@ -300,16 +342,17 @@ if (min(lda) > 1000):
 else:
     AM1p5 = datalib.AM(lda*1e-9)            
     fig = plt.figure()
-   # plt.plot(lda, AM1p5*100,'k', alpha = 0.1, label='AM1.5')
-    plt.plot(lda, (1-np_R*calR)*100,'k', label = 'Total absorption \n (measured)')
-    plt.plot(lda, (1-Rideal)*100, 'k:', label = 'Total absorption \n (simulated)')
-    plt.plot(lda, Aideal[:,1]*100,'b:', label = 'Roughness layer \n (9% $SiO_{2}$ Brugg.)')
-    plt.plot(lda, Aideal[:,2]*100,'r:', label = 'Nanoparticle layer \n (15% $SiO_2$ Brugg.)')
+    plt.plot(lda, (AM1p5/(1.4*1e9))*100,'k', alpha = 0.1, label='AM1.5')
+    plt.plot(lda, (1-np_R*calR-np_T)*100,'r', label = 'Total absorption \n (measured)')
+    plt.plot(lda, (1-Rideal-Tideal)*100, 'r--', label = 'Total absorption \n (simulated)')
+    plt.plot(lda, Aideal[:,1]*100,'b:', label = 'Roughness layer \n (6.8% $SiO_{2}$ Brugg.)')
+    plt.plot(lda, Aideal[:,2]*100,'k:', label = 'Nanoparticle layer \n (23.8% $SiO_2$ Brugg.)')
     plt.plot(lda, Aideal[:,4]*100,'m:', label = 'Si Substrate')
+    plt.plot(lda, (np_RD/np_R)*100,'c', label = 'Diffuse refleciton \n contribution \n (measured)')
     #plt.plot(lda, Aideal[:,3]*100,'y:', label = 'SiO2 native oxide absorption')
     
     plt.xlabel('Wavelength (nm)')
-    plt.ylabel('Absorption (%)')
+    plt.ylabel('%')
     #plt.title('Absorption at normal incidence')
     #ax.legend().draggable()
     
