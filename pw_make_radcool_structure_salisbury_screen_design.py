@@ -28,7 +28,7 @@ Define wavelength range of interest and layer thicknesses
 """
 
 nm = 1e-9
-lda = linspace(2500, 27000, 250) # list of wavelengths in nm
+lda = linspace(2500, 30000, 250) # list of wavelengths in nm
 
   
 
@@ -77,15 +77,19 @@ mal2o3np_fn = interp1d(lda, m, kind='linear') # make mat data a FUNCTION of lda,
 #d_list = [inf, 1000, 200, 700, 200, inf] # list of layer thicknesses in nm # 500nm Al2O3 good
 #4000/8
 #d_list = [inf, 450, 1000, 0, 800, 200, inf]
-d_list = [inf, 750, 700, 0, 800, 200, inf]
-c_list = ['i','c', 'c','c','c','c','i']
+#d_list = [inf, 750, 700, 0, 800, 200, inf]
+#d_list = [inf, 400, 900, 300, 400,0, 200, inf]
+#d_list = [inf, 0, 900, 0, 00,1000, 200, inf]
+
+d_list = [inf, 200, 1000, 200, 00,13000/(2*8), 200, inf]
+c_list = ['i','c', 'c','c','c','c','c','i']
 theta = 0
 T_list = [];
 R_list = [];
 A_list = [];
 for lda0 in lda:
 
-    n_list = [1,mal2o3np_fn(lda0), msio2np_fn(lda0), msio2_fn(lda0), mconst_fn(lda0), mag_fn(lda0), 1]
+    n_list = [1,mal2o3np_fn(lda0), msio2np_fn(lda0), msio2_fn(lda0),msi3n4_fn(lda0),  mconst_fn(lda0), mag_fn(lda0), 1]
     inc_tmm_data = tmm.inc_tmm('s',n_list,d_list,c_list,theta,lda0)
     A_list.append(tmm.inc_absorp_in_each_layer(inc_tmm_data)) #stores as list of np.arrays
     T_list.append(inc_tmm_data['T'])
@@ -119,8 +123,9 @@ plt.plot(lda[mask]*1e-3, (1-T[mask]-R[mask])*100,'r', label = 'Device absorption
 plt.plot(lda[mask]*1e-3, A[mask,1]*100,':', label = 'Abs. $Al_{2}O_{3} NP$')
 plt.plot(lda[mask]*1e-3, A[mask,2]*100,':', label = 'Abs. $SiO_{2} NP$')
 plt.plot(lda[mask]*1e-3, A[mask,3]*100,':', label = 'Abs. $SiO_{2}$')
-plt.plot(lda[mask]*1e-3, A[mask,4]*100,':', label = 'Abs. $Const.$')
-plt.plot(lda[mask]*1e-3, A[mask,5]*100,':', label = 'Abs. $Ag$')
+plt.plot(lda[mask]*1e-3, A[mask,4]*100,':', label = 'Abs. $SiN$')
+plt.plot(lda[mask]*1e-3, A[mask,5]*100,':', label = 'Abs. $Const.$')
+plt.plot(lda[mask]*1e-3, A[mask,6]*100,':', label = 'Abs. $Ag$')
 plt.xlabel('Wavelength (um)')
 plt.ylabel('%')
 #plt.legend()
