@@ -296,6 +296,77 @@ plt.show()
 ##############################################################################
 ##############################################################################
 #%%
+
+import numpy as np
+t_atmosphere = datalib.ATData(lda*1e-9)
+#m_ellip = datalib.Material_RI(lda*nm, 'RC0_1D_Al2O3') #convert lda to SI unit
+#m_online = datalib.Material_RI(lda*nm, 'Al2O3') #convert lda to SI unit
+
+m_ellip = datalib.Material_RI(lda*nm, 'Si3N4') #convert lda to SI unit
+m_online = datalib.Material_RI(lda*nm, 'Si3N4') #convert lda to SI unit
+
+
+mask = (lda >= 7000) & (lda <= 15000)
+
+norm_n_elip = (real(m_ellip)-min(real(m_ellip)))/(max(real(m_ellip))-min(real(m_ellip)));
+norm_k_elip = (imag(m_ellip)-min(imag(m_ellip)))/(max(imag(m_ellip))-min(imag(m_ellip)));
+idx_max_k_elip = np.argmax(norm_k_elip[mask])
+    
+    
+plt.figure()
+plt.plot(lda[mask]*1e-3, t_atmosphere[mask],'k', alpha = 0.2, label='Atmospheric \n transmittance')
+plt.fill_between(lda[mask]*1e-3,0,t_atmosphere[mask],color = 'k', alpha=0.2)
+#plt.plot(lda/1000, norm_n_elip,'k', label = 'n nanoparticle')
+#plt.plot(lda/1000, norm_n_brugg,'b', label = 'n bruggeman')
+ff = [0.5,0.4,0.3,0.2,0.1]
+for ff0 in ff:
+#    m_bruggeman = datalib.alloy(lda*nm, ff0, 'Air','RC0_1D_Al2O3','Bruggeman')
+    m_bruggeman = datalib.alloy(lda*nm, ff0, 'Air','Si3N4','Bruggeman')    
+    norm_k_brugg = (imag(m_bruggeman)-min(imag(m_bruggeman)))/(max(imag(m_bruggeman))-min(imag(m_bruggeman)));
+    idx_max_k_brugg = np.argmax(norm_k_brugg[mask])
+    shift = round(abs(lda[idx_max_k_brugg]-lda[idx_max_k_elip]))
+    plt.plot(lda[mask]/1000, norm_k_brugg[mask],
+             label = '%d' % float('%d' % round(ff0*100)) +'% $f.f.$ \n ($\Delta$'+ '%d' % float('%d' % shift) +' nm)' )
+    
+    
+    
+    
+plt.plot(lda[mask]/1000, norm_k_elip[mask],'r:', label = 'Nanoparticle \n bulk')   
+#plt.xlim(6,28)
+plt.xlim(7,15)
+plt.ylim(0,1.05) 
+plt.xlabel('Wavelength (um)')
+plt.ylabel('Normalized \n attenuation coefficient ')
+#plt.title('Resonance shift in $Al_{2}O_{3}$ nanoparticle films', fontsize = 24)
+plt.title('Resonance shift in $Si_{3}N_{4}$ nanoparticle films', fontsize = 24)
+plt.tight_layout(rect=[-0.10,0,0.75,1])
+leg = plt.legend(bbox_to_anchor=(1.04, 1))
+leg.draggable()
+
+plt.show() 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #"""
 #Plot TMM result with measured result
 #"""    

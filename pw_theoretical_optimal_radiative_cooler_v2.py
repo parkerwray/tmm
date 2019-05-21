@@ -37,6 +37,15 @@ structure = {
         'COOLING': 1
         }
 
+
+
+
+
+
+
+
+
+
 slab = multilayer(structure)
 slab.tmm()
 slab.T_ml = 227
@@ -99,6 +108,7 @@ print("Net Power flux out of the structure is ",slab.cooling_power_val, "W/m^2")
 #    
 #    
 #    
+
 ##%%
 #
 #
@@ -114,3 +124,19 @@ print("Net Power flux out of the structure is ",slab.cooling_power_val, "W/m^2")
 #plt.show()    
 #    
     
+
+
+
+        
+                         
+                         
+                         
+                         
+                         
+               
+
+
+
+
+
+

@@ -29,7 +29,7 @@ Define wavelength range of interest and layer thicknesses
 """
 
 nm = 1e-9
-lda = linspace(6000,28000,2000) # list of wavelengths in nm
+lda = linspace(6000,15000,6000) # list of wavelengths in nm
 
 
 
@@ -313,13 +313,15 @@ plt.show()
 
 m_ellip = datalib.Material_RI(lda*nm, 'RC0_1B_SiO2') #convert lda to SI unit
 m_online = datalib.Material_RI(lda*nm, 'SiO2') #convert lda to SI unit
-
+m_bruggeman = datalib.alloy(lda*nm, 0.1, 'Air','RC0_1B_SiO2','Bruggeman')
 
 plt.figure()
-plt.plot(lda/1000, real(m_ellip),'k', label = 'n model')
+plt.plot(lda/1000, real(m_ellip),'k', label = 'n nanoparticle')
 plt.plot(lda/1000, real(m_online),'k:', label = 'n Popova et al.')
-plt.plot(lda/1000, imag(m_ellip),'r', label = 'k model')
+plt.plot(lda/1000, imag(m_ellip),'r', label = 'k nanoparticle')
 plt.plot(lda/1000, imag(m_online),'r:', label = 'k Popova et al.')
+plt.plot(lda/1000, real(m_bruggeman),'b', label = 'n bruggeman')
+plt.plot(lda/1000, imag(m_bruggeman),'b:', label = 'k bruggeman')
 
 
 #plt.plot(lda, (1-Tref-Rref)*100,'r:', label = 'Simulated Si absorption')
@@ -332,6 +334,48 @@ plt.ylabel('')
 plt.legend()
 plt.show() 
 
+#%%
+import numpy as np
+t_atmosphere = datalib.ATData(lda*1e-9)
+m_ellip = datalib.Material_RI(lda*nm, 'RC0_1B_SiO2') #convert lda to SI unit
+m_online = datalib.Material_RI(lda*nm, 'SiO2') #convert lda to SI unit
+
+mask = (lda >= 7500) & (lda <= 10000)
+
+norm_n_elip = (real(m_ellip)-min(real(m_ellip)))/(max(real(m_ellip))-min(real(m_ellip)));
+norm_k_elip = (imag(m_ellip)-min(imag(m_ellip)))/(max(imag(m_ellip))-min(imag(m_ellip)));
+idx_max_k_elip = np.argmax(norm_k_elip[mask])
+    
+    
+plt.figure()
+plt.plot(lda[mask]*1e-3, t_atmosphere[mask],'k', alpha = 0.2, label='Atmospheric \n transmittance')
+plt.fill_between(lda[mask]*1e-3,0,t_atmosphere[mask],color = 'k', alpha=0.2)
+#plt.plot(lda/1000, norm_n_elip,'k', label = 'n nanoparticle')
+#plt.plot(lda/1000, norm_n_brugg,'b', label = 'n bruggeman')
+ff = [0.5,0.4,0.3,0.2,0.1]
+for ff0 in ff:
+    m_bruggeman = datalib.alloy(lda*nm, ff0, 'Air','RC0_1B_SiO2','Bruggeman')
+    norm_k_brugg = (imag(m_bruggeman)-min(imag(m_bruggeman)))/(max(imag(m_bruggeman))-min(imag(m_bruggeman)));
+    idx_max_k_brugg = np.argmax(norm_k_brugg[mask])
+    shift = round(abs(lda[idx_max_k_brugg]-lda[idx_max_k_elip]))
+    plt.plot(lda[mask]/1000, norm_k_brugg[mask],
+             label = '%d' % float('%d' % round(ff0*100)) +'% $f.f.$ \n ($\Delta$'+ '%d' % float('%d' % shift) +' nm)' )
+    
+    
+    
+    
+plt.plot(lda[mask]/1000, norm_k_elip[mask],'r:', label = 'Nanoparticle \n bulk')   
+plt.xlim(7.5,10)
+plt.ylim(0,1.05) 
+plt.xlabel('Wavelength (um)')
+plt.ylabel('Normalized \n attenuation coefficient ')
+plt.title('Resonance shift in $SiO_2$ nanoparticle films', fontsize = 24)
+plt.tight_layout(rect=[-0.10,0,0.75,1])
+leg = plt.legend(bbox_to_anchor=(1.04, 1))
+leg.draggable()
+
+plt.show() 
+
 
 
 
@@ -339,6 +383,29 @@ plt.show()
 ##############################################################################
 ##############################################################################
 #%%
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #"""
 #Plot TMM result with measured result
 #"""    
