@@ -8,11 +8,11 @@ from __future__ import division, print_function, absolute_import
 #                       position_resolved, find_in_structure_with_inf)
 from wptherml.wptherml.datalib import datalib
 import tmm.tmm_core as tmm
-from numpy import linspace, inf, pi, stack, array, real, imag
+from numpy import linspace, inf, pi, stack, array
 import matplotlib.pyplot as plt
 import matplotlib as mplib
 from scipy.interpolate import interp1d, InterpolatedUnivariateSpline
-import scipy.io as sio
+
 
 #mplib.rcParams['lines.linewidth'] = 8
 #mplib.rcParams['lines.markersize'] = 6
@@ -29,7 +29,7 @@ Define wavelength range of interest and layer thicknesses
 """
 
 nm = 1e-9
-lda = linspace(3000,30000,6000) # list of wavelengths in nm
+lda = linspace(350,900,1000) # list of wavelengths in nm
 
 
 
@@ -39,25 +39,66 @@ lda = linspace(3000,30000,6000) # list of wavelengths in nm
 #%%
 """ 
 Load the measurement data
+
+If the data is IR: load Reflection and Transmission
+If the data is VIS: load Total, Specular, and Diffuse Reflection
 """
 
-[np_vis, np_ir] = datalib.Read_spectra_from_File('RC0_1B_SiO2')
-[si_vis, si_ir] = datalib.Read_spectra_from_File('RC0_1B_Si')
+[np_vis, np_ir] = datalib.Read_spectra_from_File('RC1_1B_Si3N4')
+[si_vis, si_ir] = datalib.Read_spectra_from_File('RC1_1B_Si')
  
 order = 1
-
-a = InterpolatedUnivariateSpline(np_ir[:,0]*1e9, np_ir[:,1], k=order)
-np_R = a(lda)
-
-a = InterpolatedUnivariateSpline(np_ir[:,0]*1e9, np_ir[:,2], k=order)
-np_T = a(lda)
-
-a = InterpolatedUnivariateSpline(np_ir[:,0]*1e9, si_ir[:,1], k=order)
-si_R = a(lda)
-
-a = InterpolatedUnivariateSpline(np_ir[:,0]*1e9, si_ir[:,2], k=order)
-si_T = a(lda)
-
+if (min(lda) > 2000):
+    a = InterpolatedUnivariateSpline(np_ir[:,0]*1e9, np_ir[:,1], k=order)
+    np_R = a(lda)
+    
+    a = InterpolatedUnivariateSpline(np_ir[:,0]*1e9, np_ir[:,2], k=order)
+    np_T = a(lda)
+    
+    a = InterpolatedUnivariateSpline(np_ir[:,0]*1e9, si_ir[:,1], k=order)
+    si_R = a(lda)
+    
+    a = InterpolatedUnivariateSpline(np_ir[:,0]*1e9, si_ir[:,2], k=order)
+    si_T = a(lda)
+else:
+    a = InterpolatedUnivariateSpline(np_vis[:,0]*1e9, np_vis[:,1], k=order)
+    np_R = a(lda)
+    
+    a = InterpolatedUnivariateSpline(np_vis[:,0]*1e9, np_vis[:,2], k=order)
+    np_RF = a(lda)
+    
+    a = InterpolatedUnivariateSpline(np_vis[:,0]*1e9, np_vis[:,3], k=order)
+    np_RD = a(lda)
+    
+    a = InterpolatedUnivariateSpline(np_vis[:,0]*1e9, np_vis[:,4], k=order)
+    np_T = a(lda)
+    
+    a = InterpolatedUnivariateSpline(np_vis[:,0]*1e9, np_vis[:,5], k=order)
+    np_TF = a(lda)
+    
+    a = InterpolatedUnivariateSpline(np_vis[:,0]*1e9, np_vis[:,6], k=order)
+    np_TD = a(lda)    
+    
+    a = InterpolatedUnivariateSpline(si_vis[:,0]*1e9, si_vis[:,1], k=order)
+    si_R = a(lda)
+    
+    a = InterpolatedUnivariateSpline(si_vis[:,0]*1e9, si_vis[:,2], k=order)
+    si_RF = a(lda)
+    
+    a = InterpolatedUnivariateSpline(si_vis[:,0]*1e9, si_vis[:,3], k=order)
+    si_RD = a(lda)
+    
+    a = InterpolatedUnivariateSpline(si_vis[:,0]*1e9, si_vis[:,4], k=order)
+    si_T = a(lda)
+    
+    a = InterpolatedUnivariateSpline(si_vis[:,0]*1e9, si_vis[:,5], k=order)
+    si_TF = a(lda)
+    
+    a = InterpolatedUnivariateSpline(si_vis[:,0]*1e9, si_vis[:,6], k=order)
+    si_TD = a(lda)   
+    
+    
+    
 ##############################################################################
 ##############################################################################
 #%%
@@ -96,6 +137,8 @@ Notes:
     3) materials are output as m = n+j*k
     4) materials are iterpolated in datalib based on input lda values
 """
+#m = datalib.alloy(lda*nm, 0.252, 'Air','Si3N4','Bruggeman')
+#msi3n4np_ideal_fn = interp1d(lda, m, kind='linear') # make mat data a FUNCTION of lda, in nm
 
 m = datalib.Material_RI(lda*nm, 'RC0_1B_Si') #convert lda to SI unit
 msi_fn = interp1d(lda, m, kind='linear') # make mat data a FUNCTION of lda, in nm
@@ -103,26 +146,11 @@ msi_fn = interp1d(lda, m, kind='linear') # make mat data a FUNCTION of lda, in n
 m = datalib.Material_RI(lda*nm, 'SiO2') #convert lda to SI unit
 msio2_fn = interp1d(lda, m, kind='linear') # make mat data a FUNCTION of lda, in nm
 
-#m = datalib.alloy(lda*nm, 0.238, 'Air','SiO2','Bruggeman')
-#msio2np_ideal_fn = interp1d(lda, m, kind='linear') # make mat data a FUNCTION of lda, in nm
+m = datalib.alloy(lda*nm, 0.252, 'Air','Si3N4','Bruggeman')
+msi3n4np_ideal_fn = interp1d(lda, m, kind='linear') # make mat data a FUNCTION of lda, in nm
 
-m = datalib.alloy(lda*nm, 0.238, 'Air','RC0_1B_SiO2','Bruggeman')
-msio2np_ideal_fn = interp1d(lda, m, kind='linear') # make mat data a FUNCTION of lda, in nm
-
-
-
-#m = datalib.alloy(lda*nm, 0.0674, 'Air','SiO2','Bruggeman')
-#msio2rough_ideal_fn = interp1d(lda, m, kind='linear') # make mat data a FUNCTION of lda, in nm
-
-
-m = datalib.alloy(lda*nm, 0.0674, 'Air','RC0_1B_SiO2','Bruggeman')
-msio2rough_ideal_fn = interp1d(lda, m, kind='linear') # make mat data a FUNCTION of lda, in nm
-
-
-
-
-d_list = [inf, 837.372, 2621.210, 12.848, 525000, inf] # list of layer thicknesses in nm
-c_list = ['i','c','c','c','i','i']
+d_list = [inf, 183.798, 12.848, 525000, inf] # list of layer thicknesses in nm
+c_list = ['i','i','c','i','i']
 theta = 0
 T_list = [];
 R_list = [];
@@ -133,7 +161,7 @@ for lda0 in lda:
 #        msi.imag = -msi.imag
 #    if (msi.real < 0):
 #        msi.real = -msi.real
-    n_list = [1, msio2rough_ideal_fn(lda0), msio2np_ideal_fn(lda0), msio2_fn(lda0), msi_fn(lda0), 1]
+    n_list = [1, msi3n4np_ideal_fn(lda0), msio2_fn(lda0), msi_fn(lda0), 1]
     inc_tmm_data = tmm.inc_tmm('s',n_list,d_list,c_list,theta,lda0)
     A_list.append(tmm.inc_absorp_in_each_layer(inc_tmm_data)) #stores as list of np.arrays
     T_list.append(inc_tmm_data['T'])
@@ -170,7 +198,7 @@ Tref_list = [];
 Rref_list = [];
 Aref_list = [];
 dref_list = [inf, 12.848, 525000, inf] # list of layer thicknesses in nm %Ellip shows 15.62 SiO2 native oxide layer
-cref_list = ['i', 'c', 'i', 'i']
+cref_list = ['i', 'i', 'i', 'i']
 theta = 0
 for lda0 in lda:
     nref_list = [1,msio2_fn(lda0), msi_fn(lda0), 1]
@@ -193,13 +221,13 @@ Plot R and T TMM and measured result
 """    
 #plt.figure()
 #plt.plot(lda, Tref*100,'b:', label = 'Simulated Si transmission')
-#plt.plot(lda, (si_T)*100,'b', label = 'Measured Si transmission')
+#plt.plot(lda, si_T*100,'b', label = 'Measured Si transmission')
 #
 #plt.plot(lda, Rref*100,'k:', label = 'Simulated Si reflection')
-#plt.plot(lda,(si_R)*100,'k', label = 'Measured Si reflection')
+#plt.plot(lda, si_R*100,'k', label = 'Measured Si reflection')
 #
-##plt.plot(lda, (1-Tref-Rref)*100,'r:', label = 'Simulated Si absorption')
-##plt.plot(lda, (1-si_T-si_R)*100,'r', label = 'Measured Si absorption')
+#plt.plot(lda, (1-Tref-Rref)*100,'r:', label = 'Simulated Si absorption')
+#plt.plot(lda, (1-si_T-si_R)*100,'r', label = 'Measured Si absorption')
 #
 #
 #plt.xlabel('Wavelength (nm)')
@@ -215,11 +243,19 @@ Plot R and T TMM and measured result
 #%%
 """
 Calibrate measured result 
+If data is IR: Calibrate for Si reflection as well.  
 """   
 
 calR = Rref/si_R
-calT = Tref/si_T
+calT =   []        # Tref/si_T
 
+   
+
+#plt.figure()
+#plt.plot(lda,Tref)
+#plt.plot(lda,si_T)
+#plt.plot(lda, calT)
+#    
 
 ##############################################################################
 ##############################################################################
@@ -258,174 +294,79 @@ Plot TMM result with measured result
 Plot R and T TMM and measured result
 """    
 #plt.figure()
+
 #plt.plot(lda, Tideal*100,'b:', label = 'Bruggeman structure transmission')
 #plt.plot(lda, np_T*100,'b', label = 'Measured structure transmission')
 #
 #plt.plot(lda, Rideal*100,'k:', label = 'Bruggeman structure reflection')
-#plt.plot(lda, np_R*100,'k', label = 'Measured structure reflection')
+#plt.plot(lda, np_R*calR*100,'k', label = 'Measured structure reflection')
 #
-##plt.plot(lda, (si_vis_TR-np_vis_TR)*cal*100,'r', label = 'Measured SiO2 NP absorption')
-##plt.plot(lda, (A[:,1]+A[:,2]+A[:,3])*100,'r:', label = 'Fitted Bruggeman SiO2 NP absorption')
-##plt.plot(lda, (Aideal[:,1]+Aideal[:,2]+Aideal[:,3])*100,'r--', label = 'Ideal Bruggeman SiO2 NP absorption')
-##plt.plot(lda, 1-np_vis_TR*cal, label = 'Measured film Absorption')
+#plt.plot(lda, (1-Tideal-Rideal)*100,'r:', label = 'Bruggeman structure absorptin')
+#plt.plot(lda, (1-np_T-np_R*calR)*100,'r', label = 'Measured structure absorption')
 #
-##plt.plot(lda, si_vis_TR*cal, label = 'Measured si reflection')
 #plt.xlabel('Wavelength (nm)')
 #plt.ylabel('%')
 #plt.title('Transmission, reflection, and absorption at normal incidence')
 #plt.legend()
 #plt.show() 
 
+    
 ##############################################################################
 ##############################################################################
 #%%
 """
 Plot TMM and measured absorption
 """  
-t_atmosphere = datalib.ATData(lda*1e-9)
 
-fig = plt.figure()
-plt.plot(lda*1e-3, t_atmosphere*100,'k', alpha = 0.1, label='Atmospheric \n transmittance')
-plt.plot(lda*1e-3, (1-np_R*calR-np_T*calT)*100,'r', label = 'Total absorption \n (measured)')
-plt.plot(lda*1e-3, (1-Tideal-Rideal)*100, 'r--', label = 'Total absorption \n (simulated)')
-plt.plot(lda*1e-3, Aideal[:,1]*100,'b:', label = 'Roughness layer \n (6.8% $SiO_{2}$ Brugg.)')
-plt.plot(lda*1e-3, Aideal[:,2]*100,'k:', label = 'Nanoparticle layer \n (23.8% $SiO_2$ Brugg.)')
-plt.plot(lda*1e-3, Aideal[:,4]*100,'m:', label = 'Si Substrate')
-#plt.plot(lda, Aideal[:,3]*100,'y:', label = 'SiO2 native oxide absorption')
 
-plt.xlabel('Wavelength (um)')
-plt.ylabel('%')
-#plt.title('Absorption at normal incidence')
-#ax.legend().draggable()
+if (min(lda) > 2000):
+    t_atmosphere = datalib.ATData(lda*1e-9)
+    fig = plt.figure()
+    plt.plot(lda*1e-3, t_atmosphere*100,'k', alpha = 0.1, label='Atmospheric \n transmittance')
+    plt.plot(lda*1e-3, (1-np_R*calR-np_T*calT)*100,'k', label = 'Total absorption \n (measured)')
+    plt.plot(lda*1e-3, (1-Tideal-Rideal)*100, 'k:', label = 'Total absorption \n (simulated)')
+    plt.plot(lda*1e-3, Aideal[:,1]*100,'b:', label = 'Roughness layer \n (6.8% $SiO_{2}$ Brugg.)')
+    plt.plot(lda*1e-3, Aideal[:,2]*100,'r:', label = 'Nanoparticle layer \n (23.8% $SiO_2$ Brugg.)')
+    plt.plot(lda*1e-3, Aideal[:,4]*100,'m:', label = 'Si Substrate')
+    #plt.plot(lda, Aideal[:,3]*100,'y:', label = 'SiO2 native oxide absorption')
+    
+    plt.xlabel('Wavelength (um)')
+    plt.ylabel('Absorption (%)')
+    #plt.title('Absorption at normal incidence')
+    #ax.legend().draggable()
+    
+    plt.tight_layout(rect=[-0.10,0,0.75,1])
+    plt.legend(bbox_to_anchor=(1.04, 1))
+    plt.show() 
+else:
+    AM1p5 = datalib.AM(lda*1e-9)            
+    fig = plt.figure()
+    plt.plot(lda, (AM1p5/(1.4*1e9))*100,'k', alpha = 0.1, label='AM1.5')
+    plt.plot(lda, (1-np_R*calR-np_T)*100,'r', label = 'Total absorption \n (measured)')
+    plt.plot(lda, (1-Rideal-Tideal)*100, 'r--', label = 'Total absorption \n (simulated)')
+    plt.plot(lda, Aideal[:,1]*100,'b:', label = 'Roughness layer \n (6.8% $SiO_{2}$ Brugg.)')
+    plt.plot(lda, Aideal[:,2]*100,'k:', label = 'Nanoparticle layer \n (23.8% $SiO_2$ Brugg.)')
+    plt.plot(lda, Aideal[:,4]*100,'m:', label = 'Si Substrate')
+    plt.plot(lda, (np_RD/np_R)*100,'c', label = 'Diffuse refleciton \n contribution \n (measured)')
+    #plt.plot(lda, Aideal[:,3]*100,'y:', label = 'SiO2 native oxide absorption')
+    
+    plt.xlabel('Wavelength (nm)')
+    plt.ylabel('%')
+    #plt.title('Absorption at normal incidence')
+    #ax.legend().draggable()
+    
+    plt.tight_layout(rect=[-0.10,0,0.75,1])
+    plt.legend(bbox_to_anchor=(1.04, 1))
+    plt.show() 
 
-plt.tight_layout(rect=[-0.10,0,0.75,1])
-plt.legend(bbox_to_anchor=(1.04, 1))
-plt.show() 
+
+
 
 
 
 ##############################################################################
 ##############################################################################
 #%%
-#"""
-#Plot the refractive index of the NP
-#""" 
-
-m_ellip = datalib.Material_RI(lda*nm, 'RC0_1B_SiO2') #convert lda to SI unit
-m_online = datalib.Material_RI(lda*nm, 'SiO2') #convert lda to SI unit
-m_bruggeman = datalib.alloy(lda*nm, 0.1, 'Air','RC0_1B_SiO2','Bruggeman')
-
-plt.figure()
-plt.plot(lda/1000, real(m_ellip),'k', label = 'n nanoparticle (measured)')
-plt.plot(lda/1000, real(m_online),'k:', label = 'n silica glass (Popova et al.)')
-plt.plot(lda/1000, imag(m_ellip),'r', label = 'k nanoparticle (measured)')
-plt.plot(lda/1000, imag(m_online),'r:', label = 'k silica glass (Popova et al.)')
-#plt.plot(lda/1000, real(m_bruggeman),'b', label = 'n bruggeman')
-#plt.plot(lda/1000, imag(m_bruggeman),'b:', label = 'k bruggeman')
-
-
-#plt.plot(lda, (1-Tref-Rref)*100,'r:', label = 'Simulated Si absorption')
-#plt.plot(lda, (1-si_T-si_R)*100,'r', label = 'Measured Si absorption')
-
-
-plt.xlabel('Wavelength (um)')
-plt.ylabel('n,k')
-plt.xlim([3,30])
-#plt.title('index')
-leg = plt.legend()
-leg.draggable()
-plt.show() 
-
-#%%
-import numpy as np
-t_atmosphere = datalib.ATData(lda*1e-9)
-m_ellip = datalib.Material_RI(lda*nm, 'RC0_1B_SiO2') #convert lda to SI unit
-m_online = datalib.Material_RI(lda*nm, 'SiO2') #convert lda to SI unit
-
-mask = (lda >= 7500) & (lda <= 10000)
-
-norm_n_elip = (real(m_ellip)-min(real(m_ellip)))/(max(real(m_ellip))-min(real(m_ellip)));
-norm_k_elip = (imag(m_ellip)-min(imag(m_ellip)))/(max(imag(m_ellip))-min(imag(m_ellip)));
-idx_max_k_elip = np.argmax(norm_k_elip[mask])
-    
-    
-plt.figure()
-plt.plot(lda[mask]*1e-3, t_atmosphere[mask],'k', alpha = 0.2, label='Atmospheric \n transmittance')
-plt.fill_between(lda[mask]*1e-3,0,t_atmosphere[mask],color = 'k', alpha=0.2)
-#plt.plot(lda/1000, norm_n_elip,'k', label = 'n nanoparticle')
-#plt.plot(lda/1000, norm_n_brugg,'b', label = 'n bruggeman')
-ff = [0.5,0.4,0.3,0.2,0.1]
-for ff0 in ff:
-    m_bruggeman = datalib.alloy(lda*nm, ff0, 'Air','RC0_1B_SiO2','Bruggeman')
-    norm_k_brugg = (imag(m_bruggeman)-min(imag(m_bruggeman)))/(max(imag(m_bruggeman))-min(imag(m_bruggeman)));
-    idx_max_k_brugg = np.argmax(norm_k_brugg[mask])
-    shift = round(abs(lda[idx_max_k_brugg]-lda[idx_max_k_elip]))
-    plt.plot(lda[mask]/1000, norm_k_brugg[mask],
-             label = '%d' % float('%d' % round(ff0*100)) +'% $f.f.$ \n ($\Delta$'+ '%d' % float('%d' % shift) +' nm)' )
-    
-    
-    
-    
-plt.plot(lda[mask]/1000, norm_k_elip[mask],'r:', label = 'Nanoparticle \n bulk')   
-plt.xlim(7.5,10)
-plt.ylim(0,1.05) 
-plt.xlabel('Wavelength (um)')
-plt.ylabel('Normalized \n attenuation coefficient ')
-plt.title('Resonance shift in $SiO_2$ nanoparticle films', fontsize = 24)
-plt.tight_layout(rect=[-0.10,0,0.75,1])
-leg = plt.legend(bbox_to_anchor=(1.04, 1))
-leg.draggable()
-
-plt.show() 
-
-#%%
-i = 0;
-mb = np.empty([len(lda),len(ff)])
-for ff0 in ff:
-    
-    mb[:,i] = datalib.alloy(lda*nm, ff0, 'Air','RC0_1D_Al2O3','Bruggeman')
-    i = i+1
-
-
-sio.savemat('Al2O3_Brugg.mat', {'mb': mb})
-
-sio.savemat('wavelength.mat', {'lda': lda})
-#    norm_k_brugg = (imag(m_bruggeman)-min(imag(m_bruggeman)))/(max(imag(m_bruggeman))-min(imag(m_bruggeman)));
-#    idx_max_k_brugg = np.argmax(norm_k_brugg[mask])
-#    shift = round(abs(lda[idx_max_k_brugg]-lda[idx_max_k_elip]))
-#    plt.plot(lda[mask]/1000, norm_k_brugg[mask],
-#             label = '%d' % float('%d' % round(ff0*100)) +'% $f.f.$ \n ($\Delta$'+ '%d' % float('%d' % shift) +' nm)' )
-#    
-#    
-    
-
-
-##############################################################################
-##############################################################################
-#%%
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #"""
 #Plot TMM result with measured result
 #"""    

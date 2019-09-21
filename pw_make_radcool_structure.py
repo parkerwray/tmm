@@ -29,7 +29,7 @@ Define wavelength range of interest and layer thicknesses
 """
 
 nm = 1e-9
-lda = linspace(2000, 15000,5000) # list of wavelengths in nm
+lda = linspace(250, 30000,5000) # list of wavelengths in nm
 
   
 ##############################################################################
@@ -115,15 +115,15 @@ msio2np_ideal_fn = interp1d(lda, m, kind='linear') # make mat data a FUNCTION of
 m = datalib.alloy(lda*nm, 0.30, 'Air','Si3N4','Bruggeman')
 msi3n4np_ideal_fn = interp1d(lda, m, kind='linear') # make mat data a FUNCTION of lda, in nm
 
-d_list = [inf, 1000, 1000, 2000, 650, 200, inf] # list of layer thicknesses in nm
-c_list = ['i', 'c','c','c','c','c','i']
+d_list = [inf, 800, 2000, 200, inf] # list of layer thicknesses in nm
+c_list = ['i','c','c','c','i']
 theta = 0
 T_list = [];
 R_list = [];
 A_list = [];
 for lda0 in lda:
 
-    n_list = [1, msi3n4np_ideal_fn(lda0), msio2np_ideal_fn(lda0), msio2_fn(lda0),msi3n4_fn(lda0), mag_fn(lda0), 1]
+    n_list = [1, msi3n4np_ideal_fn(lda0), msio2np_ideal_fn(lda0), mag_fn(lda0), 1]
     inc_tmm_data = tmm.inc_tmm('s',n_list,d_list,c_list,theta,lda0)
     A_list.append(tmm.inc_absorp_in_each_layer(inc_tmm_data)) #stores as list of np.arrays
     T_list.append(inc_tmm_data['T'])

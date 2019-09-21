@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
 
-plt.rcParams['animation.ffmpeg_path'] = '\Documents\ffmpeg-4.1.3'
+#plt.rcParams['animation.ffmpeg_path'] = '\Documents\ffmpeg-4.1.3'
 
 
 class IdealRadiator:
@@ -21,28 +21,55 @@ class IdealRadiator:
         self.slab.tmm()
         self.T_atm = datalib.ATData(self.slab.lambda_array)
         self.BBamb = datalib.BB(self.slab.lambda_array, self.slab.T_amb)
-        self.e_amb = self.BBamb*(1-self.T_atm)
+#        self.e_amb = self.BBamb*(1-self.T_atm)
+        self.e_amb = np.empty([len(self.slab.t),len(self.slab.lambda_array)])       
+        for i in range(0,len(self.slab.t)):
+            for j in range(0,len(self.slab.lambda_array)):
+                angular_mod = 1./np.cos(self.slab.t[i])
+                self.e_amb[i][j] = self.BBamb[j]*(1-self.T_atm[j]**angular_mod)        
+        
+        
         #self.e_struct = self.slab.thermal_emission_array
         #self.BBml = datalib.BB(self.slab.lambda_array, self.slab.T_ml)
         self.lda = self.slab.lambda_array
-        
+
     def optimal_spectrum(self, T):
         self.slab.T_ml = T
         self.slab.update()
-        self.BBml = datalib.BB(self.slab.lambda_array, self.slab.T_ml)   
+        self.BBml = datalib.BB(self.slab.lambda_array, self.slab.T_ml)  
+
         for i in range(0,len(self.slab.t)):
             for j in range(0,len(self.slab.lambda_array)):
-                if (self.BBml[j]-self.e_amb[j]) > self.e_amb[j]:
-                    self.slab.emissivity_array_p[i,j] = self.slab.emissivity_array_s[i,j] =  1
-                    self.slab.emissivity_array[j] = 1            
+                if (self.BBml[j]-self.e_amb[i][j]) > 0:    #  self.e_amb[j]:
+                    self.slab.emissivity_array_p[i,j] = self.slab.emissivity_array_s[i,j] =  1          
                 else:
                     self.slab.emissivity_array_p[i,j] = self.slab.emissivity_array_s[i,j] =  0
-                    self.slab.emissivity_array[j] = 0           
-        
+                    
+                    
+        self.slab.emissivity_array = self.slab.emissivity_array_p[0,:]  
         self.slab.thermal_emission_ea()    
         self.slab.thermal_emission()        
         self.slab.cooling_power()                  
         self.e_struct = self.slab.thermal_emission_array
+
+        
+#    def optimal_spectrum(self, T):
+#        self.slab.T_ml = T
+#        self.slab.update()
+#        self.BBml = datalib.BB(self.slab.lambda_array, self.slab.T_ml)   
+#        for i in range(0,len(self.slab.t)):
+#            for j in range(0,len(self.slab.lambda_array)):
+#                if (self.BBml[j]-self.e_amb[j]) > 0: # self.e_amb[j]:
+#                    self.slab.emissivity_array_p[i,j] = self.slab.emissivity_array_s[i,j] =  1
+#                    self.slab.emissivity_array[j] = 1            
+#                else:
+#                    self.slab.emissivity_array_p[i,j] = self.slab.emissivity_array_s[i,j] =  0
+#                    self.slab.emissivity_array[j] = 0           
+#        
+#        self.slab.thermal_emission_ea()    
+#        self.slab.thermal_emission()        
+#        self.slab.cooling_power()                  
+#        self.e_struct = self.slab.thermal_emission_array
     
 
 nm = 1e-9
@@ -75,7 +102,7 @@ rad.optimal_spectrum(300)
 
 
 ## Set up figure settings
-fig, ax1 = plt.subplots()
+fig, ax1 = plt.subplots(figsize=(10,5))
 plt.xlim(min(rad.lda)*1e6, max(rad.lda)*1e6)
 plt.ylim(0, 1.1e7*1e-6)
 plt.xlabel('Wavelength ($um$)',fontsize=20)
@@ -120,15 +147,24 @@ def animate(i):
     ln1.set_data(rad.lda*1e6, rad.e_struct*1e-6) 
     #ln1.color(colors[i+1])
     ax1.collections.clear()
-    fill1 = plt.fill_between(rad.lda*1e6,0,rad.e_amb*1e-6,
+    fill1 = plt.fill_between(rad.lda*1e6,0,rad.e_amb[0,:]*1e-6,
                              color = 'b',
                              alpha=0.5)
-    fill2 = plt.fill_between(rad.lda*1e6,rad.e_amb*1e-6,rad.e_struct*1e-6,
-                     where =rad.e_struct > rad.e_amb, 
+    fill2 = plt.fill_between(rad.lda*1e6,rad.e_amb[0,:]*1e-6,rad.e_struct*1e-6,
+                     where =rad.e_struct > rad.e_amb[0,:], 
                      color = colors[i+1],
                      alpha=1)      
     temp_text.set_text('Obj. temp. = ' + str(T[i]) + 'K \n' +
-                       'Cooling power = ' + '%s' % float('%.1g' % rad.slab.cooling_power_val) + 'W/m^2')
+                       'Cooling power = ' + '%s' % float('%.3g' % 
+                               (rad.slab.radiative_power_val-rad.slab.atmospheric_power_val)) + 'W/m^2 \n'+
+                       'Radiative power = ' + '%s' % float('%.3g' % rad.slab.radiative_power_val) + 'W/m^2 \n'+
+                       'Atmospheric power = ' + '%s' % float('%.3g' % rad.slab.atmospheric_power_val) + 'W/m^2 \n')   
+                       #'Solar power = ' + '%s' % float('%.3g' % rad.slab.solar_power_val) + 'W/m^2')  
+                       
+#    print("Radiative Power (cooling) is ",rad.slab.radiative_power_val, "W/m^2")
+#    print("Absorbed Solar Power (warming) is ",rad.slab.solar_power_val, "W/m^2")
+#    print("Absorbed Atmospheric Radiation (warming) is ",rad.slab.atmospheric_power_val, "W/m^2")
+#    print("Net Power flux out of the structure is ",rad.slab.cooling_power_val, "W/m^2")
 
     return ln1, ln2, ln3, fill1, fill2, 
 #temp_text,
@@ -136,10 +172,10 @@ def animate(i):
     
 
 
-T = [300,290,280,270,260,250,240,230,227]
+T = [300,290,280,270,260,250,240,230,220]
 ani = animation.FuncAnimation(fig, animate, frames=len(T), init_func = init,  repeat=False)
 
 plt.show()
 #ani.save('HeroinOverdosesJumpy.mp4', writer=writer)
 
-#ani.save('im')
+#ani.save('im.gif', fps = 1) # Make gif then use online gif-> mov converter!

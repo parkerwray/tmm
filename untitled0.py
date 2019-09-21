@@ -5,141 +5,125 @@ from __future__ import division, print_function, absolute_import
 #                       position_resolved, find_in_structure_with_inf)
 from wptherml.wptherml.datalib import datalib
 import tmm.tmm_core as tmm
-from numpy import linspace, inf, pi, stack, array
+import numpy as np
+from numpy import linspace, inf, pi, stack, array, real, imag
 import matplotlib.pyplot as plt
 import matplotlib as mplib
 from scipy.interpolate import interp1d, InterpolatedUnivariateSpline
+import scipy.io as sio
 
-
-mplib.rcParams['lines.linewidth'] = 4
-mplib.rcParams['lines.markersize'] = 4
-mplib.rcParams['axes.titlesize'] = 20
-mplib.rcParams['axes.labelsize'] =24
-mplib.rcParams['xtick.labelsize'] = 24
-mplib.rcParams['ytick.labelsize'] = 24
-mplib.rcParams['font.size'] = 24
-
-##############################################################################
-##############################################################################
-#%%
-
-""" 
-Define wavelength range of interest and layer thicknesses
-"""
+#%% 
+# GET EFFECTIVE INDEX DATA FROM BRUGGEMAN APPROXIMATION 
+# GET DATA FOR SIO2 AND SIN OVER DENSE WAVELENGTH RANGE
 
 nm = 1e-9
-lda = linspace(250, 27000, 1000) # list of wavelengths in nm
+lda = linspace(200,30000,10000) # list of wavelengths in nm
+ff = np.array([0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100])/100;
 
-  
+m_sio2 = np.zeros((len(lda),len(ff)+1), dtype = np.complex64);
+for idx in range(0,len(ff)):
+    m_sio2[:,idx] = datalib.alloy(lda*nm, ff[idx], 'Air','SiO2','Bruggeman')
+m_sio2[:,-1] = lda
 
-##############################################################################
-##############################################################################
-#%%
-"""
-Run the TMM code per wavelength for SiO2 NP on Si using IDEAL MATERIALS 
-"""
-
-"""
-Define materials of interest for layered film simulation
-
-Notes:
-    1) materials are described in SI units
-    2) materials are stored in datalib
-    3) materials are output as m = n+j*k
-    4) materials are iterpolated in datalib based on input lda values
-"""
-
-
-m = datalib.Material_RI(lda*nm, 'Si3N4') #convert lda to SI unit
-msi3n4_fn = interp1d(lda, m, kind='linear') # make mat data a FUNCTION of lda, in nm
-
-m = datalib.Material_RI(lda*nm, 'SiO2') #convert lda to SI unit
-msio2_fn = interp1d(lda, m, kind='linear') # make mat data a FUNCTION of lda, in nm
-
-m = datalib.Material_RI(lda*nm, 'Ag') #convert lda to SI unit
-mag_fn = interp1d(lda, m, kind='linear') # make mat data a FUNCTION of lda, in nm
-
-#m = datalib.alloy(lda*nm, 0.10, 'Air','RC0_1B_SiO2','Bruggeman') # 15% ff good
-#msio2np10_fn = interp1d(lda, m, kind='linear') # make mat data a FUNCTION of lda, in nm
-
-m = datalib.alloy(lda*nm, 0.30, 'Air','RC0_1B_SiO2','Bruggeman')
-msio2np_fn = interp1d(lda, m, kind='linear') # make mat data a FUNCTION of lda, in nm
-
-m = datalib.alloy(lda*nm, 0.30, 'Air','RC0_1D_Al2O3','Bruggeman')
-mal2o3np_fn = interp1d(lda, m, kind='linear') # make mat data a FUNCTION of lda, in nm
-
-d_list = [inf,0, 1200, 500, 200, inf] # list of layer thicknesses in nm # 500nm Al2O3 good
-c_list = ['i', 'c', 'c','c','c','i']
-theta = 0
-T_list = [];
-R_list = [];
-A_list = [];
-for lda0 in lda:
-
-    n_list = [1,  mal2o3np_fn(lda0), msio2np_fn(lda0), msio2_fn(lda0), mag_fn(lda0), 1]
-    inc_tmm_data = tmm.inc_tmm('s',n_list,d_list,c_list,theta,lda0)
-    A_list.append(tmm.inc_absorp_in_each_layer(inc_tmm_data)) #stores as list of np.arrays
-    T_list.append(inc_tmm_data['T'])
-    R_list.append(inc_tmm_data['R'])    
+m_sin = np.zeros((len(lda),len(ff)+1), dtype = np.complex64);
+for idx in range(0,len(ff)):
+    m_sin[:,idx] = datalib.alloy(lda*nm, ff[idx], 'Air','SiN','Bruggeman')
+m_sin[:,-1] = lda    
     
-A = stack(A_list, axis = 0) # convert list of np.arrays to single np.array
-T = array(T_list, dtype = complex) # Convert list to array for math operations
-R = array(R_list, dtype = complex) # Convert list to array for math operations
-
-##############################################################################
-##############################################################################
+sio.savemat('SiO2_Brugg_FF_0_5_100_lda.mat', {'m_sio2': m_sio2})
+sio.savemat('SiN_Brugg_FF_0_5_100_lda.mat', {'m_sin': m_sin})
+   
+    
 #%%
 
+structure_sio2_sin = {
+        ### computation mode - inline means the structure and calculation
+        ### type will be determined from the values of this dictionary
+        'mode': 'Inline',
+        ### temperature of the structure - relevant for all thermal applications
+        ### value is stored in attribute self.T
+        'Temperature': 300,
+        ### actual materials the structure is made from
+        ### values are stored in the attribute self.n
+        #'Material_List': ['Air','SiO2', 'SiO2','Si3N4','Ag', 'Air'],
+        'Material_List': ['Air', 'SiO2', 'Si3N4', 'Ag', 'Air'],
+        ### thickness of each layer... terminal layers must be set to zero
+        ### values are stored in attribute self.d
+        'Thickness_List': [0, 100, 100, 1000, 0], # You can not have the back reflector as the last layer!!!
+        ### range of wavelengths optical properties will be calculated for
+        ### values are stored in the array self.lam
+        'Lambda_List': [250*nm, 30*um, 10000],
+        ## Calculate for explicit angular dependence
+        'EXPLICIT_ANGLE': 1,
+        ## Calculate quantities related to radiative cooling
+        'COOLING': 1
+        }
+
+structure_sin_sio2 = structure_sio2_sin
+structure_sin_sio2['Material_List']=['Air', 'Si3N4', 'SiO2', 'Ag', 'Air']
+slab_sio2_sin = multilayer(structure_sio2_sin)
+slab_sin_sio2 = multilayer(structure_sin_sio2)
 
 
 
-"""
-Plot TMM and measured absorption
-"""  
+H = np.linspace(100, 5000, num = 50)
+T = np.array([300, 290, 280, 270, 260, 250])
+FF = np.array([0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100])/100;
 
+P_cool_sio2_sin = np.zeros((len(T),len(H),len(H)))
+P_cool_sin_sio2 = np.zeros((len(T),len(H),len(H)))
 
-#if (min(lda) > 2000):
+P_cool_sio2_sin_np = np.zeros((len(T),len(H),len(H),len(FF)))
+P_cool_sin_sio2_np = np.zeros((len(T),len(H),len(H),len(FF)))
 
-
-mask = (lda > 2000) & (lda <= max(lda))
-t_atmosphere = datalib.ATData(lda*1e-9)
-fig1 = plt.figure()
-plt.plot(lda[mask]*1e-3, t_atmosphere[mask]*100,'k', alpha = 0.1, label='Atmospheric \n transmittance')
-plt.plot(lda[mask]*1e-3, (1-T[mask]-R[mask])*100,'r', label = 'Device absorption \n (Coherent)')
-plt.plot(lda[mask]*1e-3, A[mask,1]*100,':', label = 'Abs. $TiO_{2}$ NP \n (10%, Brugg.)')    
-plt.plot(lda[mask]*1e-3, A[mask,2]*100,':', label = 'Abs. $SiO_{2}$ NP \n (30%, Brugg.)')
-plt.plot(lda[mask]*1e-3, A[mask,3]*100,':', label = 'Abs. $SiO_{2}$')
-plt.plot(lda[mask]*1e-3, A[mask,4]*100,':', label = 'Abs. $Ag$')
-plt.xlabel('Wavelength (um)')
-plt.ylabel('%')
-#plt.legend()
-plt.tight_layout(rect=[-0.10,0,0.75,1])
-plt.legend(bbox_to_anchor=(1.04, 1))
-fig1.show()
-        
-mask = (lda >= min(lda)) & (lda <= 2000)
-AM1p5 = datalib.AM(lda*1e-9)            
-fig2 = plt.figure()
-plt.plot(lda[mask], (AM1p5[mask]/(1.4*1e9))*100,'k', alpha = 0.1, label='AM1.5')
-plt.plot(lda[mask], (1-T[mask]-R[mask])*100,'r', label = 'Device absorption \n (Coherent)')
-plt.plot(lda[mask], A[mask,1]*100,':', label = 'Abs. $TiO_{2}$ NP \n (10%, Brugg.)')    
-plt.plot(lda[mask], A[mask,2]*100,':', label = 'Abs. $SiO_{2}$ NP \n (30%, Brugg.)')
-plt.plot(lda[mask], A[mask,3]*100,':', label = 'Abs. $SiO_{2}$')
-plt.plot(lda[mask], A[mask,4]*100,':', label = 'Abs. $Ag$')
-plt.xlabel('Wavelength (nm)')
-plt.ylabel('%')
-#plt.legend()
-plt.tight_layout(rect=[-0.10,0,0.75,1])
-plt.legend(bbox_to_anchor=(1.04, 1))
-fig2.show()
+for idx_T in range(0,len(T)):
+    for idx_L1 in range(0,len(H)):
+        for idx_L2 in range(0,len(H)):
+            
+            
+            for idx_ff in range(0,len(FF)):
 
 
 
 
-#print("Radiative Power (cooling) is ",np_slab.radiative_power_val, "W/m^2")
-#print("Absorbed Solar Power (warming) is ",np_slab.solar_power_val, "W/m^2")
-#print("Absorbed Atmospheric Radiation (warming) is ",np_slab.atmospheric_power_val, "W/m^2")
-#print("Net Power flux out of the structure is ",np_slab.cooling_power_val, "W/m^2")
+
+
+#%%
+## Change one of the layers to an effective index
+#fill_fraction = 0.3
+#layer = 1
+#np_slab.layer_alloy(layer,fill_fraction,'Air','Si3N4','Bruggeman', plot = False)
+##np_slab.layer_alloy(layer,fill_fraction,'Air','Si3N4','MG', plot = False)
+#layer = 2
+#np_slab.layer_alloy(layer,fill_fraction,'Air','SiO2','Bruggeman', plot = False)
+#np_slab.fresnel() # You need to update the fresnel Quantities to reflect the effective index change. 
+#np_slab.fresnel_ea()
+#
+#elements = 80
+#temp =  np.linspace(219,450,elements)
+#rad_pow = np.zeros([elements,elements])
+#sol_pow = np.zeros([elements,elements])
+#at_pow = np.zeros([elements,elements])
+#cool_pow = np.zeros([elements,elements])
+#
+#for idx0 in range(0,elements):
+#    for idx1 in range(0,elements):
+#        np_slab.T_ml = temp[idx0]
+#        np_slab.T_amb = temp[idx1]
+#        
+#        #np_slab.thermal_emission()
+#        np_slab.thermal_emission_ea()
+#        np_slab.cooling_power()
+#        BB = datalib.BB(np_slab.lambda_array, np_slab.T_ml)
+#        
+#        rad_pow[idx0][idx1] = np_slab.radiative_power_val
+#        sol_pow[idx0][idx1] = np_slab.solar_power_val
+#        at_pow[idx0][idx1] = np_slab.atmospheric_power_val
+#        cool_pow[idx0][idx1] = np_slab.cooling_power_val
+
+
+
+
 
 
 
