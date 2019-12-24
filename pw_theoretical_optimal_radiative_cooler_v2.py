@@ -12,6 +12,9 @@ import matplotlib as mplib
 import random 
 import matplotlib.animation as animation
 
+
+
+
 nm = 1e-9
 um = 1e-6 
 structure = {

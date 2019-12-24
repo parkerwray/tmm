@@ -125,7 +125,7 @@ temp_text = ax1.text(0.5, 0.8, '', transform=ax1.transAxes)
 def init():
     temp_text.set_text('')
     return ln1, ln2, ln3 ,temp_text
-#, fill1, fill2
+
 
 def animate(i):
     global rad, T
